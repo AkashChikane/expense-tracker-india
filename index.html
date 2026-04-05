@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker - India</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <h1>💰 Expense Tracker</h1>
+            <p class="subtitle">Manage your finances, reduce your loans</p>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="tabs">
+            <button class="tab-btn active" data-tab="expenses">Expenses</button>
+            <button class="tab-btn" data-tab="loans">Loans</button>
+            <button class="tab-btn" data-tab="calculator">Calculator</button>
+            <button class="tab-btn" data-tab="summary">Summary</button>
+        </nav>
+
+        <!-- Expenses Tab -->
+        <div id="expenses-tab" class="tab-content active">
+            <div class="card">
+                <h2>Add Expense</h2>
+                <form id="expense-form">
+                    <div class="form-group">
+                        <label for="expense-name">Description</label>
+                        <input type="text" id="expense-name" required placeholder="e.g., Groceries">
+                    </div>
+                    <div class="form-group">
+                        <label for="expense-amount">Amount (₹)</label>
+                        <input type="number" id="expense-amount" required placeholder="0.00" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label for="expense-category">Category</label>
+                        <select id="expense-category" required>
+                            <option value="food">🍔 Food & Dining</option>
+                            <option value="transport">🚗 Transport</option>
+                            <option value="utilities">💡 Utilities</option>
+                            <option value="entertainment">🎬 Entertainment</option>
+                            <option value="shopping">🛍️ Shopping</option>
+                            <option value="health">⚕️ Health</option>
+                            <option value="education">📚 Education</option>
+                            <option value="other">📦 Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="expense-date">Date</label>
+                        <input type="date" id="expense-date" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Expense</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>Recent Expenses</h2>
+                <div id="expenses-list"></div>
+            </div>
+        </div>
+
+        <!-- Loans Tab -->
+        <div id="loans-tab" class="tab-content">
+            <div class="card">
+                <h2>Add Loan</h2>
+                <form id="loan-form">
+                    <div class="form-group">
+                        <label for="loan-name">Loan Name</label>
+                        <input type="text" id="loan-name" required placeholder="e.g., Personal Loan">
+                    </div>
+                    <div class="form-group">
+                        <label for="loan-principal">Principal Amount (₹)</label>
+                        <input type="number" id="loan-principal" required placeholder="0.00" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label for="loan-interest">Interest Rate (% per year)</label>
+                        <input type="number" id="loan-interest" required placeholder="10.5" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label for="loan-tenure">Tenure (months)</label>
+                        <input type="number" id="loan-tenure" required placeholder="12">
+                    </div>
+                    <div class="form-group">
+                        <label for="loan-start">Start Date</label>
+                        <input type="date" id="loan-start" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Loan</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>Active Loans</h2>
+                <div id="loans-list"></div>
+            </div>
+        </div>
+
+        <!-- Calculator Tab -->
+        <div id="calculator-tab" class="tab-content">
+            <div class="card">
+                <h2>💡 Loan Reduction Calculator</h2>
+                <p class="info-text">Calculate how much you can save by paying extra EMI or making prepayments</p>
+                
+                <form id="calculator-form">
+                    <div class="form-group">
+                        <label for="calc-principal">Loan Amount (₹)</label>
+                        <input type="number" id="calc-principal" required placeholder="100000" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label for="calc-interest">Interest Rate (% per year)</label>
+                        <input type="number" id="calc-interest" required placeholder="10.5" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label for="calc-tenure">Tenure (months)</label>
+                        <input type="number" id="calc-tenure" required placeholder="12">
+                    </div>
+                    <div class="form-group">
+                        <label for="calc-extra">Extra Monthly Payment (₹)</label>
+                        <input type="number" id="calc-extra" placeholder="0" step="0.01">
+                    </div>
+                    <button type="button" class="btn btn-primary" id="calculate-btn">Calculate Savings</button>
+                </form>
+
+                <div id="calculator-results" class="results-section"></div>
+            </div>
+        </div>
+
+        <!-- Summary Tab -->
+        <div id="summary-tab" class="tab-content">
+            <div class="card">
+                <h2>📊 Financial Summary</h2>
+                <div id="summary-content"></div>
+            </div>
+
+            <div class="card">
+                <h2>📈 Monthly Breakdown</h2>
+                <div id="monthly-breakdown"></div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <p>All data is stored locally on your device</p>
+            <button id="export-data" class="btn btn-secondary">Export Data</button>
+            <button id="import-data" class="btn btn-secondary">Import Data</button>
+            <button id="clear-data" class="btn btn-danger">Clear All Data</button>
+        </footer>
+    </div>
+
+    <input type="file" id="import-file" accept=".json" style="display: none;">
+
+    <script src="app.js"></script>
+</body>
+</html>
