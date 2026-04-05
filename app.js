@@ -14,7 +14,7 @@ const STORAGE_KEYS = {
 // =========================
 let expenses = JSON.parse(localStorage.getItem(STORAGE_KEYS.EXPENSES) || '[]');
 let loans = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOANS) || '[]');
-let monthlyBudget = Number(localStorage.getItem(STORAGE_KEYS.BUDGET) || 0);
+let monthlyBudget = Number(localStorage.getItem(STORAGE_KEYS.BUDGET)) || 0;
 let expenseCategoryFilter = '';
 let isAuthenticated = false;
 let calendarOffsetMonths = 0;
@@ -791,7 +791,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // monthly budget
     document.getElementById('set-budget-btn')?.addEventListener('click', () => {
-        const val = Number(document.getElementById('budget-input')?.value);
+        const rawVal = document.getElementById('budget-input')?.value;
+        if (!rawVal || !rawVal.trim()) return; // ignore empty input — don't accidentally wipe budget
+        const val = Number(rawVal);
         if (isNaN(val) || val < 0) { alert('Please enter a valid budget amount (0 or more).'); return; }
         monthlyBudget = val;
         saveToStorage();
