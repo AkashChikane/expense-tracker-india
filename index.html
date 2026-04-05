@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loan Manager - India</title>
+    <title>Expense & Loan Tracker - India</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <!-- Password Protection Screen -->
     <div id="auth-screen" class="auth-screen">
         <div class="auth-card">
-            <h1>🏦 Loan Manager</h1>
-            <p class="auth-subtitle">Enter your password to access your loans</p>
+            <h1>🏦 Expense & Loan Tracker</h1>
+            <p class="auth-subtitle">Enter your password to access your finances</p>
             <form id="auth-form">
                 <div class="form-group">
                     <input type="password" id="password-input" placeholder="Enter password" required autofocus>
@@ -29,8 +29,8 @@
     <div class="container" id="main-app" style="display: none;">
         <!-- Header -->
         <header>
-            <h1>🏦 Loan Manager</h1>
-            <p class="subtitle">Track loans, optimize EMIs, save money</p>
+            <h1>🏦 Expense & Loan Tracker</h1>
+            <p class="subtitle">Track loans, expenses, optimize EMIs, save money</p>
             <div class="header-stats">
                 <div class="stat-card">
                     <div class="stat-value" id="total-loans-amount">₹0</div>
@@ -158,7 +158,7 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="expense-amount">Amount (₹) *</label>
-                            <input type="number" id="expense-amount" required placeholder="0.00" step="0.01">
+                            <input type="number" id="expense-amount" required placeholder="0.00" step="0.01" min="0.01">
                         </div>
                         <div class="form-group">
                             <label for="expense-category">Category *</label>
@@ -184,8 +184,31 @@
                 </form>
             </div>
 
+            <!-- Monthly Budget Card -->
+            <div class="card">
+                <h2>💰 Monthly Budget</h2>
+                <div class="budget-input-row">
+                    <input type="number" id="budget-input" min="0" step="100" placeholder="Set monthly budget (₹)">
+                    <button class="btn btn-primary btn-small" id="set-budget-btn" style="margin-top:0;white-space:nowrap;">Set Budget</button>
+                </div>
+                <div id="budget-tracker"></div>
+            </div>
+
             <div class="card">
                 <h2>Recent Expenses</h2>
+                <div class="filter-bar">
+                    <select id="expense-category-filter">
+                        <option value="">All Categories</option>
+                        <option value="food">🍔 Food & Dining</option>
+                        <option value="transport">🚗 Transport</option>
+                        <option value="utilities">💡 Utilities</option>
+                        <option value="entertainment">🎬 Entertainment</option>
+                        <option value="shopping">🛍️ Shopping</option>
+                        <option value="health">⚕️ Health</option>
+                        <option value="education">📚 Education</option>
+                        <option value="other">📦 Other</option>
+                    </select>
+                </div>
                 <div id="expenses-list"></div>
             </div>
 

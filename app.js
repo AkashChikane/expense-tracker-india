@@ -5,7 +5,8 @@ const STORAGE_KEYS = {
     EXPENSES: 'expenses_india',
     LOANS: 'loans_india',
     PASSWORD_HASH: 'app_password_hash',
-    SESSION: 'app_session'
+    SESSION: 'app_session',
+    BUDGET: 'monthly_budget_india'
 };
 
 // =========================
@@ -13,6 +14,8 @@ const STORAGE_KEYS = {
 // =========================
 let expenses = JSON.parse(localStorage.getItem(STORAGE_KEYS.EXPENSES) || '[]');
 let loans = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOANS) || '[]');
+let monthlyBudget = Number(localStorage.getItem(STORAGE_KEYS.BUDGET)) || 0;
+let expenseCategoryFilter = '';
 let isAuthenticated = false;
 let calendarOffsetMonths = 0;
 
@@ -67,8 +70,15 @@ const totalPayable = (principal, emi, tenureMonths) => emi * tenureMonths;
 const totalInterest = (principal, emi, tenureMonths) => (emi * tenureMonths) - principal;
 
 const saveToStorage = () => {
-    localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(expenses));
-    localStorage.setItem(STORAGE_KEYS.LOANS, JSON.stringify(loans));
+    try {
+        localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(expenses));
+        localStorage.setItem(STORAGE_KEYS.LOANS, JSON.stringify(loans));
+        localStorage.setItem(STORAGE_KEYS.BUDGET, String(monthlyBudget));
+    } catch (e) {
+        if (e.name === 'QuotaExceededError') {
+            alert('Storage is full. Please export a backup and delete some old data to free up space.');
+        }
+    }
 };
 
 const escapeHtml = (str) => String(str ?? '')
@@ -147,6 +157,16 @@ const getLoanProgress = (loan) => {
     const remaining = Math.max((loan.tenure || 0) - monthsPaid, 0);
     const progress = Math.min(((monthsPaid / (loan.tenure || 1)) * 100), 100);
     return { progress, monthsPaid, remaining };
+};
+
+// Estimate outstanding principal balance using present value of remaining EMIs
+const getRemainingBalance = (loan) => {
+    const emi = Number(loan.emi || calcEmi(loan.principal, loan.interestRate, loan.tenure));
+    const r = monthlyRateFromAnnual(Number(loan.interestRate || 0));
+    const { remaining } = getLoanProgress(loan);
+    if (remaining <= 0) return 0;
+    if (r === 0) return emi * remaining;
+    return emi * (1 - Math.pow(1 + r, -remaining)) / r;
 };
 
 const getDueLoansForMonth = (date) => {
@@ -269,8 +289,8 @@ const renderLoans = () => {
     container.innerHTML = loans.map((loan) => {
         const { emi, total, totalInt } = loanMetrics(loan);
         const { progress, remaining } = getLoanProgress(loan);
+        const remainingBalance = getRemainingBalance(loan);
         const safeName = escapeHtml(loan.name);
-        const selectId = `optimize-${loan.id}`;
 
         return `
             <div class="loan-item">
@@ -306,6 +326,7 @@ const renderLoans = () => {
                     <div class="progress-bar">
                         <div class="progress-fill" style="width:${progress}%"></div>
                     </div>
+                    ${remaining > 0 ? `<div class="loan-balance-row"><span>Est. Outstanding: ${formatCurrency(remainingBalance)}</span></div>` : '<div class="loan-balance-row"><span>✅ Fully Paid</span></div>'}
                 </div>
 
                 <div class="loan-actions">
@@ -321,18 +342,24 @@ const renderExpenses = () => {
     const container = document.getElementById('expenses-list');
     if (!container) return;
 
-    if (!expenses.length) {
+    let filtered = [...expenses].sort((a, b) => b.id - a.id);
+    if (expenseCategoryFilter) {
+        filtered = filtered.filter((e) => e.category === expenseCategoryFilter);
+    }
+
+    if (!filtered.length) {
         container.innerHTML = `
             <div class="empty-state">
                 <div class="empty-state-icon">🧾</div>
-                <p>No expenses recorded yet</p>
+                <p>${expenseCategoryFilter ? 'No expenses in this category.' : 'No expenses recorded yet.'}</p>
             </div>
         `;
         return;
     }
 
-    const recent = [...expenses].sort((a, b) => b.id - a.id).slice(0, 8);
-    container.innerHTML = recent.map((expense) => `
+    const shown = filtered.slice(0, expenseCategoryFilter ? 50 : 15);
+    const more = filtered.length - shown.length;
+    container.innerHTML = shown.map((expense) => `
         <div class="expense-item">
             <div class="expense-header">
                 <span class="expense-name">${escapeHtml(expense.name)}</span>
@@ -344,7 +371,7 @@ const renderExpenses = () => {
                 <button class="delete-btn" onclick="deleteExpense(${expense.id})">Delete</button>
             </div>
         </div>
-    `).join('');
+    `).join('') + (more > 0 ? `<p style="text-align:center;color:var(--text-light);padding:1rem 0;font-size:0.9rem;">+ ${more} more expense${more > 1 ? 's' : ''} — use category filter to narrow results</p>` : '');
 };
 
 const renderExpenseSummary = () => {
@@ -383,6 +410,51 @@ const renderExpenseSummary = () => {
                     <span class="stat-value neutral">${formatCurrency(amount)}</span>
                 </div>
             `).join('')}
+    `;
+};
+
+const renderBudgetTracker = () => {
+    const container = document.getElementById('budget-tracker');
+    if (!container) return;
+
+    const budgetInput = document.getElementById('budget-input');
+    if (budgetInput && monthlyBudget > 0) {
+        budgetInput.placeholder = `Current: ${formatCurrency(monthlyBudget)} — enter new value to update`;
+    }
+
+    const currentMonth = monthKey(new Date());
+    const monthTotal = expenses
+        .filter((e) => (e.date || '').startsWith(currentMonth))
+        .reduce((sum, e) => sum + Number(e.amount || 0), 0);
+
+    if (monthlyBudget <= 0) {
+        container.innerHTML = `<p class="info-text" style="margin-bottom:0;">Set a monthly budget above to track your spending goals.</p>`;
+        return;
+    }
+
+    const percentage = Math.min((monthTotal / monthlyBudget) * 100, 100);
+    const overBudget = monthTotal > monthlyBudget;
+    const diff = Math.abs(monthlyBudget - monthTotal);
+
+    container.innerHTML = `
+        <div class="budget-stats">
+            <div class="budget-stat-item">
+                <div class="budget-stat-label">Spent</div>
+                <div class="budget-stat-value ${overBudget ? 'text-danger' : ''}">${formatCurrency(monthTotal)}</div>
+            </div>
+            <div class="budget-stat-item">
+                <div class="budget-stat-label">Budget</div>
+                <div class="budget-stat-value">${formatCurrency(monthlyBudget)}</div>
+            </div>
+            <div class="budget-stat-item">
+                <div class="budget-stat-label">${overBudget ? 'Over by' : 'Left'}</div>
+                <div class="budget-stat-value ${overBudget ? 'text-danger' : 'text-success'}">${formatCurrency(diff)}</div>
+            </div>
+        </div>
+        <div class="budget-progress-bar">
+            <div class="budget-progress-fill ${overBudget ? 'over' : ''}" style="width: ${percentage}%"></div>
+        </div>
+        <div class="budget-percent-label">${Math.round(percentage)}% of monthly budget used${overBudget ? ' ⚠️ Over budget!' : ''}</div>
     `;
 };
 
@@ -515,6 +587,7 @@ const refreshAll = () => {
     renderLoans();
     renderExpenses();
     renderExpenseSummary();
+    renderBudgetTracker();
     renderCalendar();
     renderOptimizeSelect();
     renderOptimizeDetails(document.getElementById('optimize-loan-select')?.value || '');
@@ -645,19 +718,28 @@ document.addEventListener('DOMContentLoaded', () => {
     // loan form
     document.getElementById('loan-form')?.addEventListener('submit', (e) => {
         e.preventDefault();
+        const name = document.getElementById('loan-name').value.trim();
         const principal = Number(document.getElementById('loan-principal').value);
         const interestRate = Number(document.getElementById('loan-interest').value);
         const tenure = Number(document.getElementById('loan-tenure').value);
+        const startDate = document.getElementById('loan-start').value;
+
+        if (!name) { alert('Please enter a loan name.'); return; }
+        if (principal <= 0) { alert('Principal amount must be greater than ₹0.'); return; }
+        if (interestRate < 0) { alert('Interest rate cannot be negative.'); return; }
+        if (!Number.isInteger(tenure) || tenure <= 0) { alert('Tenure must be a positive whole number of months.'); return; }
+        if (!startDate) { alert('Please select a start date.'); return; }
+
         const emi = calcEmi(principal, interestRate, tenure);
 
         loans.unshift({
             id: Date.now(),
-            name: document.getElementById('loan-name').value.trim(),
+            name,
             principal,
             interestRate,
             tenure,
             emi,
-            startDate: document.getElementById('loan-start').value,
+            startDate,
             totalPayable: totalPayable(principal, emi, tenure)
         });
 
@@ -671,13 +753,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // expense form (kept for schema compatibility, but visually secondary)
     document.getElementById('expense-form')?.addEventListener('submit', (e) => {
         e.preventDefault();
-        expenses.unshift({
-            id: Date.now(),
-            name: document.getElementById('expense-name').value.trim(),
-            amount: Number(document.getElementById('expense-amount').value),
-            category: document.getElementById('expense-category').value,
-            date: document.getElementById('expense-date').value
-        });
+        const name = document.getElementById('expense-name').value.trim();
+        const amount = Number(document.getElementById('expense-amount').value);
+        const category = document.getElementById('expense-category').value;
+        const date = document.getElementById('expense-date').value;
+
+        if (!name) { alert('Please enter a description.'); return; }
+        if (amount <= 0) { alert('Amount must be greater than ₹0.'); return; }
+        if (!date) { alert('Please select a date.'); return; }
+
+        expenses.unshift({ id: Date.now(), name, amount, category, date });
         saveToStorage();
         e.target.reset();
         document.getElementById('expense-date').valueAsDate = new Date();
@@ -702,6 +787,25 @@ document.addEventListener('DOMContentLoaded', () => {
             const loanId = document.getElementById('optimize-loan-select')?.value || '';
             renderOptimizeDetails(loanId);
         });
+    });
+
+    // monthly budget
+    document.getElementById('set-budget-btn')?.addEventListener('click', () => {
+        const rawVal = document.getElementById('budget-input')?.value;
+        if (!rawVal || !rawVal.trim()) return; // ignore empty input — don't accidentally wipe budget
+        const val = Number(rawVal);
+        if (isNaN(val) || val < 0) { alert('Please enter a valid budget amount (0 or more).'); return; }
+        monthlyBudget = val;
+        saveToStorage();
+        renderBudgetTracker();
+        const budgetInput = document.getElementById('budget-input');
+        if (budgetInput) budgetInput.value = '';
+    });
+
+    // category filter
+    document.getElementById('expense-category-filter')?.addEventListener('change', (e) => {
+        expenseCategoryFilter = e.target.value;
+        renderExpenses();
     });
 
     // export/import/clear
@@ -755,32 +859,4 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loanStart) loanStart.valueAsDate = new Date();
 
     checkAuth();
-});
-
-// Keep the optimizer inputs in the DOM even if not visible to users looking at old state.
-// These are appended at runtime to avoid changing stored schema or disturbing existing data.
-document.addEventListener('DOMContentLoaded', () => {
-    const optimizeCard = document.getElementById('optimize-tab');
-    if (optimizeCard && !document.getElementById('opt-extra-monthly')) {
-        const card = optimizeCard.querySelector('.card');
-        if (card) {
-            const extra = document.createElement('div');
-            extra.innerHTML = `
-                <div class="optimize-input">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="opt-extra-monthly">Extra Monthly Payment (₹)</label>
-                            <input id="opt-extra-monthly" type="number" min="0" step="0.01" placeholder="5000">
-                        </div>
-                        <div class="form-group">
-                            <label for="opt-one-time">One-time Prepayment (₹)</label>
-                            <input id="opt-one-time" type="number" min="0" step="0.01" placeholder="0">
-                        </div>
-                    </div>
-                </div>
-            `;
-            const details = document.getElementById('optimize-loan-details');
-            if (details) card.insertBefore(extra.firstElementChild, details);
-        }
-    }
 });
