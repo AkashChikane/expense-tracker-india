@@ -1,8 +1,133 @@
 // Data storage keys
 const STORAGE_KEYS = {
     EXPENSES: 'expenses_india',
-    LOANS: 'loans_india'
+    LOANS: 'loans_india',
+    PASSWORD_HASH: 'app_password_hash',
+    SESSION: 'app_session'
 };
+
+// Simple hash function for password (SHA-256)
+const hashPassword = async (password) => {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+};
+
+// Authentication
+let isAuthenticated = false;
+
+const checkAuth = () => {
+    const session = localStorage.getItem(STORAGE_KEYS.SESSION);
+    if (session) {
+        const sessionData = JSON.parse(session);
+        // Session valid for 24 hours
+        if (Date.now() - sessionData.timestamp < 24 * 60 * 60 * 1000) {
+            isAuthenticated = true;
+            showApp();
+            return;
+        }
+    }
+    showAuthScreen();
+};
+
+const showAuthScreen = () => {
+    document.getElementById('auth-screen').style.display = 'flex';
+    document.getElementById('main-app').style.display = 'none';
+};
+
+const showApp = () => {
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('main-app').style.display = 'block';
+    // Render initial data
+    renderExpenses();
+    renderLoans();
+    renderSummary();
+};
+
+document.getElementById('auth-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const password = document.getElementById('password-input').value;
+    const errorMsg = document.getElementById('auth-error');
+    
+    const storedHash = localStorage.getItem(STORAGE_KEYS.PASSWORD_HASH);
+    const inputHash = await hashPassword(password);
+    
+    if (!storedHash) {
+        // First time - set password
+        if (password.length < 4) {
+            errorMsg.textContent = 'Password must be at least 4 characters';
+            return;
+        }
+        localStorage.setItem(STORAGE_KEYS.PASSWORD_HASH, inputHash);
+        localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify({ timestamp: Date.now() }));
+        isAuthenticated = true;
+        errorMsg.textContent = '';
+        showApp();
+        alert('Password set successfully! Remember it - you\'ll need it to access your data.');
+    } else {
+        // Verify password
+        if (inputHash === storedHash) {
+            localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify({ timestamp: Date.now() }));
+            isAuthenticated = true;
+            errorMsg.textContent = '';
+            showApp();
+        } else {
+            errorMsg.textContent = 'Incorrect password';
+            document.getElementById('password-input').value = '';
+        }
+    }
+});
+
+document.getElementById('reset-password').addEventListener('click', () => {
+    if (confirm('⚠️ WARNING: Resetting your password will DELETE ALL YOUR DATA (expenses and loans). This cannot be undone. Continue?')) {
+        if (confirm('Last chance! Are you absolutely sure you want to delete everything and reset?')) {
+            localStorage.clear();
+            expenses = [];
+            loans = [];
+            document.getElementById('password-input').value = '';
+            document.getElementById('auth-error').textContent = 'Data cleared. Set a new password.';
+        }
+    }
+});
+
+document.getElementById('logout').addEventListener('click', () => {
+    localStorage.removeItem(STORAGE_KEYS.SESSION);
+    isAuthenticated = false;
+    document.getElementById('password-input').value = '';
+    document.getElementById('auth-error').textContent = '';
+    showAuthScreen();
+});
+
+document.getElementById('change-password').addEventListener('click', async () => {
+    const currentPassword = prompt('Enter your current password:');
+    if (!currentPassword) return;
+    
+    const storedHash = localStorage.getItem(STORAGE_KEYS.PASSWORD_HASH);
+    const currentHash = await hashPassword(currentPassword);
+    
+    if (currentHash !== storedHash) {
+        alert('Incorrect current password');
+        return;
+    }
+    
+    const newPassword = prompt('Enter your new password (minimum 4 characters):');
+    if (!newPassword || newPassword.length < 4) {
+        alert('Password must be at least 4 characters');
+        return;
+    }
+    
+    const confirmPassword = prompt('Confirm your new password:');
+    if (newPassword !== confirmPassword) {
+        alert('Passwords do not match');
+        return;
+    }
+    
+    const newHash = await hashPassword(newPassword);
+    localStorage.setItem(STORAGE_KEYS.PASSWORD_HASH, newHash);
+    alert('Password changed successfully!');
+});
 
 // Initialize data
 let expenses = JSON.parse(localStorage.getItem(STORAGE_KEYS.EXPENSES)) || [];
@@ -439,12 +564,10 @@ document.getElementById('clear-data').addEventListener('click', () => {
 
 // Initialize on load
 document.addEventListener('DOMContentLoaded', () => {
+    // Check authentication first
+    checkAuth();
+    
     // Set today's date as default for expense form
     document.getElementById('expense-date').valueAsDate = new Date();
     document.getElementById('loan-start').valueAsDate = new Date();
-    
-    // Render initial data
-    renderExpenses();
-    renderLoans();
-    renderSummary();
 });

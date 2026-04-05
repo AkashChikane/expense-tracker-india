@@ -2,6 +2,19 @@
 
 A comprehensive, mobile-first expense and loan tracking application designed for Indian users with INR currency support.
 
+## 🔒 Security
+
+This app is **password-protected**. When you first access it:
+1. You'll be asked to set a password (minimum 4 characters)
+2. Your password is hashed using SHA-256 and stored locally
+3. You'll need to enter this password each time you visit (session lasts 24 hours)
+4. All data remains encrypted in your browser's localStorage
+
+**Important**: 
+- Keep your password safe - there's no recovery option
+- To reset your password, you must clear all data (expenses & loans)
+- This is client-side security; your data never leaves your device
+
 ## Features
 
 ### 📊 Expense Tracking

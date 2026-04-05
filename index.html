@@ -7,7 +7,26 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
+    <!-- Password Protection Screen -->
+    <div id="auth-screen" class="auth-screen">
+        <div class="auth-card">
+            <h1>🔐 Expense Tracker</h1>
+            <p class="auth-subtitle">Enter your password to access your data</p>
+            <form id="auth-form">
+                <div class="form-group">
+                    <input type="password" id="password-input" placeholder="Enter password" required autofocus>
+                </div>
+                <button type="submit" class="btn btn-primary">Unlock</button>
+                <p id="auth-error" class="auth-error"></p>
+            </form>
+            <div class="auth-footer">
+                <p><small>First time? Set your password above.</small></p>
+                <button id="reset-password" class="btn btn-secondary" style="margin-top: 1rem;">Reset Password</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" id="main-app" style="display: none;">
         <!-- Header -->
         <header>
             <h1>💰 Expense Tracker</h1>
@@ -145,7 +164,9 @@
             <p>All data is stored locally on your device</p>
             <button id="export-data" class="btn btn-secondary">Export Data</button>
             <button id="import-data" class="btn btn-secondary">Import Data</button>
+            <button id="change-password" class="btn btn-secondary">Change Password</button>
             <button id="clear-data" class="btn btn-danger">Clear All Data</button>
+            <button id="logout" class="btn btn-secondary" style="margin-top: 0.5rem;">🔒 Logout</button>
         </footer>
     </div>
 
