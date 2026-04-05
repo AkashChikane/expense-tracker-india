@@ -656,54 +656,257 @@ footer {
     color: var(--text-light);
 }
 
+/* Summary Stats (used in expense summary and calendar) */
+.summary-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.summary-stat:last-child {
+    border-bottom: none;
+}
+
+.summary-stat .stat-label {
+    font-size: 0.9rem;
+    opacity: 1;
+    text-transform: none;
+    letter-spacing: normal;
+    color: var(--text-light);
+}
+
+.summary-stat .stat-value {
+    font-size: 1rem;
+    margin-bottom: 0;
+    font-weight: 700;
+}
+
+.stat-value.negative {
+    color: var(--danger);
+}
+
+.stat-value.neutral {
+    color: var(--primary-light);
+}
+
+/* Budget Tracker */
+.budget-setup {
+    margin-bottom: 1rem;
+}
+
+.budget-input-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.budget-input-row input {
+    flex: 1;
+    padding: 0.875rem;
+    border: 2px solid var(--border);
+    border-radius: 0.75rem;
+    font-size: 1rem;
+    background: var(--bg-secondary);
+    color: var(--text);
+    transition: border-color 0.3s;
+}
+
+.budget-input-row input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.budget-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.budget-stat-item {
+    background: var(--bg-secondary);
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+    text-align: center;
+}
+
+.budget-stat-label {
+    font-size: 0.75rem;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+}
+
+.budget-stat-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.budget-progress-bar {
+    background: var(--bg-secondary);
+    height: 12px;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.budget-progress-fill {
+    background: linear-gradient(90deg, var(--secondary), var(--primary));
+    height: 100%;
+    transition: width 0.6s ease;
+    border-radius: 6px;
+}
+
+.budget-progress-fill.over {
+    background: linear-gradient(90deg, var(--warning), var(--danger));
+}
+
+.budget-percent-label {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    text-align: center;
+}
+
+.text-danger {
+    color: var(--danger) !important;
+}
+
+.text-success {
+    color: var(--secondary) !important;
+}
+
+/* Expense Filter Bar */
+.filter-bar {
+    margin-bottom: 1rem;
+}
+
+.filter-bar select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid var(--border);
+    border-radius: 0.75rem;
+    background: var(--bg-secondary);
+    color: var(--text);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: border-color 0.3s;
+}
+
+.filter-bar select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* Loan Outstanding Balance Row */
+.loan-balance-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-light);
+}
+
+.loan-balance-row span {
+    background: var(--bg-secondary);
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .header-stats {
-        grid-template-columns: 1fr;
         gap: 0.75rem;
     }
-    
+
     .stat-value {
-        font-size: 1.3rem;
+        font-size: 1.2rem;
     }
-    
+
     .tabs {
         gap: 0.5rem;
     }
-    
+
     .tab-btn {
-        font-size: 0.85rem;
-        padding: 0.75rem 1rem;
-        min-width: 80px;
+        font-size: 0.8rem;
+        padding: 0.75rem 0.5rem;
+        min-width: 70px;
     }
-    
-    .loan-info-grid {
-        grid-template-columns: 1fr;
-    }
-    
+
     .comparison-table {
         grid-template-columns: 1fr;
     }
-    
+
     .savings-amount {
         font-size: 2rem;
     }
 }
 
 @media (max-width: 480px) {
-    header h1 {
-        font-size: 2rem;
+    header {
+        padding: 1.5rem 1rem;
     }
-    
+
+    header h1 {
+        font-size: 1.75rem;
+    }
+
+    .header-stats {
+        gap: 0.5rem;
+    }
+
+    .stat-card {
+        padding: 0.75rem 0.5rem;
+    }
+
+    .stat-value {
+        font-size: 1rem;
+    }
+
+    .stat-label {
+        font-size: 0.65rem;
+    }
+
+    .tabs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        overflow-x: visible;
+    }
+
+    .tab-btn {
+        min-width: auto;
+        font-size: 0.8rem;
+        padding: 0.75rem 0.5rem;
+    }
+
     .loan-name {
         font-size: 1.1rem;
     }
-    
+
     .loan-amount {
         font-size: 1.2rem;
     }
-    
+
     .card {
-        padding: 1.5rem;
+        padding: 1.25rem;
+    }
+
+    .budget-stats {
+        gap: 0.5rem;
+    }
+
+    .budget-stat-value {
+        font-size: 0.95rem;
+    }
+
+    .footer-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
     }
 }
